@@ -1,0 +1,518 @@
+# User → role mapping, built from OrgAccess dataset inspection (70,503 rows).
+#
+# user_role values from the dataset were grouped into the 20 canonical roles
+# defined in permissions.yaml. One representative user is created per major
+# user_role variant so pipeline tests can target specific personas.
+#
+# Naming convention: <first>.<OrgAccess_user_role>
+# All role values must match a key defined in config/permissions.yaml.
+
+users:
+
+  # ── Executive ──────────────────────────────────────────────────────────────
+  alex.CEO:
+    role: executive
+    display_name: "Alex (CEO)"
+
+  priya.CFO:
+    role: executive
+    display_name: "Priya (Chief Financial Officer)"
+
+  ravi.COO:
+    role: executive
+    display_name: "Ravi (Chief Operating Officer)"
+
+  nina.CTO:
+    role: executive
+    display_name: "Nina (Chief Technology Officer)"
+
+  james.VP_Sales:
+    role: executive
+    display_name: "James (VP Sales)"
+
+  linda.VP_HR:
+    role: executive
+    display_name: "Linda (VP HR)"
+
+  omar.VP_Marketing:
+    role: executive
+    display_name: "Omar (VP Marketing)"
+
+  chen.VP_Engineering:
+    role: executive
+    display_name: "Chen (VP Engineering)"
+
+  sara.VP_Product:
+    role: executive
+    display_name: "Sara (VP Product)"
+
+  victor.VP_Executive_Operations:
+    role: executive
+    display_name: "Victor (VP Executive Operations)"
+
+  diana.Chief_Of_Staff:
+    role: executive
+    display_name: "Diana (Chief of Staff)"
+
+  felix.Field_Executive:
+    role: executive
+    display_name: "Felix (Field Executive)"
+
+  # ── Director ───────────────────────────────────────────────────────────────
+  sarah.Director_Finance:
+    role: director
+    display_name: "Sarah (Director of Finance)"
+
+  mike.Director_IT:
+    role: director
+    display_name: "Mike (Director IT)"
+
+  grace.Director_Marketing:
+    role: director
+    display_name: "Grace (Director Marketing)"
+
+  tom.Director_Operations:
+    role: director
+    display_name: "Tom (Director Operations)"
+
+  eve.Director_Confidential_Services:
+    role: director
+    display_name: "Eve (Director Confidential Services)"
+
+  brian.Board_Liaison:
+    role: director
+    display_name: "Brian (Board Liaison)"
+
+  claire.Personal_Secretary_CEO:
+    role: director
+    display_name: "Claire (Personal Secretary to CEO)"
+
+  raj.Interdepartmental_Advisor:
+    role: director
+    display_name: "Raj (Interdepartmental Advisor)"
+
+  # ── Senior Manager ─────────────────────────────────────────────────────────
+  amy.Senior_Manager_HR:
+    role: senior_manager
+    display_name: "Amy (Senior Manager HR)"
+
+  ben.Senior_Manager_Engineering:
+    role: senior_manager
+    display_name: "Ben (Senior Manager Engineering)"
+
+  chloe.Senior_Manager_Marketing:
+    role: senior_manager
+    display_name: "Chloe (Senior Manager Marketing)"
+
+  derek.Senior_Manager_Sales:
+    role: senior_manager
+    display_name: "Derek (Senior Manager Sales)"
+
+  fiona.Program_Manager:
+    role: senior_manager
+    display_name: "Fiona (Program Manager)"
+
+  george.Project_Manager:
+    role: senior_manager
+    display_name: "George (Project Manager)"
+
+  helen.Key_Manager:
+    role: senior_manager
+    display_name: "Helen (Key Manager)"
+
+  ivan.Release_Manager:
+    role: senior_manager
+    display_name: "Ivan (Release Manager)"
+
+  # ── HR Manager ─────────────────────────────────────────────────────────────
+  julia.HR_Manager:
+    role: hr_manager
+    display_name: "Julia (HR Manager)"
+
+  kevin.HR_Business_Partner:
+    role: hr_manager
+    display_name: "Kevin (HR Business Partner)"
+
+  laura.HR_Team_Lead:
+    role: hr_manager
+    display_name: "Laura (HR Team Lead)"
+
+  marco.HR_Analytics_Lead:
+    role: hr_manager
+    display_name: "Marco (HR Analytics Lead)"
+
+  nancy.Onboarding_HR_Specialist:
+    role: hr_manager
+    display_name: "Nancy (Onboarding HR Specialist)"
+
+  oliver.Talent_Acquisition_Specialist:
+    role: hr_manager
+    display_name: "Oliver (Talent Acquisition Specialist)"
+
+  # ── HR Generalist ──────────────────────────────────────────────────────────
+  paula.HR_Generalist:
+    role: hr_generalist
+    display_name: "Paula (HR Generalist)"
+
+  quinn.HR_Associate:
+    role: hr_generalist
+    display_name: "Quinn (HR Associate)"
+
+  rosa.HR_Coordinator:
+    role: hr_generalist
+    display_name: "Rosa (HR Coordinator)"
+
+  sean.HR_Administrator:
+    role: hr_generalist
+    display_name: "Sean (HR Administrator)"
+
+  tina.HR_Data_Analyst:
+    role: hr_generalist
+    display_name: "Tina (HR Data Analyst)"
+
+  # ── Finance Manager ────────────────────────────────────────────────────────
+  uma.Finance_Manager:
+    role: finance_manager
+    display_name: "Uma (Finance Manager)"
+
+  victor.Finance_Officer:
+    role: finance_manager
+    display_name: "Victor (Finance Officer)"
+
+  wendy.Payroll_Auditor_Finance:
+    role: finance_manager
+    display_name: "Wendy (Payroll Auditor Finance)"
+
+  # ── Finance Analyst ────────────────────────────────────────────────────────
+  xander.Financial_Analyst:
+    role: finance_analyst
+    display_name: "Xander (Financial Analyst)"
+
+  yara.Senior_Financial_Analyst:
+    role: finance_analyst
+    display_name: "Yara (Senior Financial Analyst)"
+
+  zoe.Finance_Data_Analyst:
+    role: finance_analyst
+    display_name: "Zoe (Finance Data Analyst)"
+
+  aaron.Business_Intelligence_Analyst:
+    role: finance_analyst
+    display_name: "Aaron (Business Intelligence Analyst)"
+
+  bella.Sales_Operations_Analyst:
+    role: finance_analyst
+    display_name: "Bella (Sales Operations Analyst)"
+
+  # ── Marketing Manager ──────────────────────────────────────────────────────
+  carl.Marketing_Manager:
+    role: marketing_manager
+    display_name: "Carl (Marketing Manager)"
+
+  dana.EU_Marketing_Manager:
+    role: marketing_manager
+    display_name: "Dana (EU Marketing Manager)"
+
+  eli.Senior_Marketing_Manager:
+    role: marketing_manager
+    display_name: "Eli (Senior Marketing Manager)"
+
+  # ── Marketing Specialist ───────────────────────────────────────────────────
+  fay.Marketing_Specialist:
+    role: marketing_specialist
+    display_name: "Fay (Marketing Specialist)"
+
+  greg.Marketing_Coordinator:
+    role: marketing_specialist
+    display_name: "Greg (Marketing Coordinator)"
+
+  hana.Marketing_Analyst:
+    role: marketing_specialist
+    display_name: "Hana (Marketing Analyst)"
+
+  igor.Market_Researcher:
+    role: marketing_specialist
+    display_name: "Igor (Market Researcher)"
+
+  # ── Sales Manager ──────────────────────────────────────────────────────────
+  jade.Sales_Team_Lead:
+    role: sales_manager
+    display_name: "Jade (Sales Team Lead)"
+
+  kai.Senior_Manager_Sales:
+    role: sales_manager
+    display_name: "Kai (Senior Manager Sales)"
+
+  lara.Global_Sales_Executive:
+    role: sales_manager
+    display_name: "Lara (Global Sales Executive)"
+
+  # ── Sales Representative ───────────────────────────────────────────────────
+  max.Sales_Representative:
+    role: sales_representative
+    display_name: "Max (Sales Representative)"
+
+  noa.Account_Manager_X:
+    role: sales_representative
+    display_name: "Noa (Account Manager)"
+
+  # ── Legal Counsel ──────────────────────────────────────────────────────────
+  owen.Legal_Counsel:
+    role: legal_counsel
+    display_name: "Owen (Legal Counsel)"
+
+  pia.Legal_Associate:
+    role: legal_counsel
+    display_name: "Pia (Legal Associate)"
+
+  quinton.Legal_Team_Lead:
+    role: legal_counsel
+    display_name: "Quinton (Legal Team Lead)"
+
+  ruth.Contract_Reviewer:
+    role: legal_counsel
+    display_name: "Ruth (Contract Reviewer)"
+
+  steve.Regulatory_Liaison:
+    role: legal_counsel
+    display_name: "Steve (Regulatory Liaison)"
+
+  tara.Policy_Compliance_Specialist:
+    role: legal_counsel
+    display_name: "Tara (Policy Compliance Specialist)"
+
+  # ── Compliance Officer ─────────────────────────────────────────────────────
+  uma.Compliance_Officer:
+    role: compliance_officer
+    display_name: "Uma (Compliance Officer)"
+
+  val.Compliance_Manager:
+    role: compliance_officer
+    display_name: "Val (Compliance Manager)"
+
+  will.Compliance_Auditor:
+    role: compliance_officer
+    display_name: "Will (Compliance Auditor)"
+
+  xena.Regulatory_Inspector:
+    role: compliance_officer
+    display_name: "Xena (Regulatory Inspector)"
+
+  # ── Risk Manager ───────────────────────────────────────────────────────────
+  yale.Risk_Manager:
+    role: risk_manager
+    display_name: "Yale (Risk Manager)"
+
+  zara.Data_Privacy_Officer:
+    role: risk_manager
+    display_name: "Zara (Data Privacy Officer)"
+
+  adam.AI_Ethics_Officer:
+    role: risk_manager
+    display_name: "Adam (AI Ethics Officer)"
+
+  # ── IT Manager ─────────────────────────────────────────────────────────────
+  bob.IT_Manager:
+    role: it_manager
+    display_name: "Bob (IT Manager)"
+
+  cara.Network_Engineer:
+    role: it_manager
+    display_name: "Cara (Network Engineer)"
+
+  dan.DevOps_Engineer:
+    role: it_manager
+    display_name: "Dan (DevOps Engineer)"
+
+  eve.System_Admin:
+    role: it_manager
+    display_name: "Eve (System Admin)"
+
+  frank.Disaster_Recovery_Lead:
+    role: it_manager
+    display_name: "Frank (Disaster Recovery Lead)"
+
+  gina.Cloud_Vendor_Admin:
+    role: it_manager
+    display_name: "Gina (Cloud Vendor Admin)"
+
+  # ── IT Support ─────────────────────────────────────────────────────────────
+  henry.IT_Support_Specialist:
+    role: it_support
+    display_name: "Henry (IT Support Specialist)"
+
+  iris.Helpdesk_Specialist:
+    role: it_support
+    display_name: "Iris (Helpdesk Specialist)"
+
+  jack.Backup_Specialist:
+    role: it_support
+    display_name: "Jack (Backup Specialist)"
+
+  kira.Log_Review_Officer:
+    role: it_support
+    display_name: "Kira (Log Review Officer)"
+
+  # ── Senior Engineer ────────────────────────────────────────────────────────
+  leo.Senior_Software_Engineer:
+    role: senior_engineer
+    display_name: "Leo (Senior Software Engineer)"
+
+  maya.Engineering_Team_Lead:
+    role: senior_engineer
+    display_name: "Maya (Engineering Team Lead)"
+
+  noel.ML_Engineer:
+    role: senior_engineer
+    display_name: "Noel (ML Engineer)"
+
+  olivia.AI_Engineer:
+    role: senior_engineer
+    display_name: "Olivia (AI Engineer)"
+
+  peter.Machine_Learning_Engineer:
+    role: senior_engineer
+    display_name: "Peter (Machine Learning Engineer)"
+
+  quinn.Senior_Data_Scientist:
+    role: senior_engineer
+    display_name: "Quinn (Senior Data Scientist)"
+
+  # ── Engineer ───────────────────────────────────────────────────────────────
+  rachel.Software_Engineer:
+    role: engineer
+    display_name: "Rachel (Software Engineer)"
+
+  sam.Junior_Software_Engineer:
+    role: engineer
+    display_name: "Sam (Junior Software Engineer)"
+
+  tara.AI_Software_Developer:
+    role: engineer
+    display_name: "Tara (AI Software Developer)"
+
+  ursula.Product_Manager:
+    role: engineer
+    display_name: "Ursula (Product Manager)"
+
+  # ── Security Analyst ───────────────────────────────────────────────────────
+  vera.Security_Analyst:
+    role: security_analyst
+    display_name: "Vera (Security Analyst)"
+
+  wade.Security_Auditor:
+    role: security_analyst
+    display_name: "Wade (Security Auditor)"
+
+  xia.Security_Team_Lead:
+    role: security_analyst
+    display_name: "Xia (Security Team Lead)"
+
+  yuki.IT_Auditor:
+    role: security_analyst
+    display_name: "Yuki (IT Auditor)"
+
+  zack.Incident_Response_Engineer:
+    role: security_analyst
+    display_name: "Zack (Incident Response Engineer)"
+
+  # ── Auditor ────────────────────────────────────────────────────────────────
+  anna.Internal_Auditor:
+    role: auditor
+    display_name: "Anna (Internal Auditor)"
+
+  boris.External_Auditor:
+    role: auditor
+    display_name: "Boris (External Auditor)"
+
+  cora.Senior_Auditor:
+    role: auditor
+    display_name: "Cora (Senior Auditor)"
+
+  duke.Audit_Team_Lead:
+    role: auditor
+    display_name: "Duke (Audit Team Lead)"
+
+  # ── Data Analyst ───────────────────────────────────────────────────────────
+  emma.Data_Analyst:
+    role: data_analyst
+    display_name: "Emma (Data Analyst)"
+
+  finn.Senior_Data_Analyst:
+    role: data_analyst
+    display_name: "Finn (Senior Data Analyst)"
+
+  gale.Data_Scientist:
+    role: data_analyst
+    display_name: "Gale (Data Scientist)"
+
+  hugo.Market_Insights_Analyst:
+    role: data_analyst
+    display_name: "Hugo (Market Insights Analyst)"
+
+  isla.CRM_Data_Analyst:
+    role: data_analyst
+    display_name: "Isla (CRM Data Analyst)"
+
+  # ── Operations Manager ─────────────────────────────────────────────────────
+  joe.Operations_Manager:
+    role: operations_manager
+    display_name: "Joe (Operations Manager)"
+
+  kate.Chief_Operations_Officer:
+    role: operations_manager
+    display_name: "Kate (Chief Operations Officer)"
+
+  # ── Vendor ─────────────────────────────────────────────────────────────────
+  liam.Vendor_Support:
+    role: vendor
+    display_name: "Liam (Vendor Support)"
+
+  mia.Vendor_Support_Engineer:
+    role: vendor
+    display_name: "Mia (Vendor Support Engineer)"
+
+  neil.External_Cloud_Technician:
+    role: vendor
+    display_name: "Neil (External Cloud Technician)"
+
+  # ── Intern / Temp / New Hire ───────────────────────────────────────────────
+  priya.Engineering_Intern:
+    role: intern
+    display_name: "Priya (Engineering Intern)"
+
+  rob.Finance_Intern:
+    role: intern
+    display_name: "Rob (Finance Intern)"
+
+  sue.Marketing_Intern:
+    role: intern
+    display_name: "Sue (Marketing Intern)"
+
+  tim.IT_Intern:
+    role: intern
+    display_name: "Tim (IT Intern)"
+
+  uma.Data_Science_Intern:
+    role: intern
+    display_name: "Uma (Data Science Intern)"
+
+  vic.New_Hire:
+    role: intern
+    display_name: "Vic (New Hire)"
+
+  wren.Temp_HR_Assistant:
+    role: intern
+    display_name: "Wren (Temp HR Assistant)"
+
+  xavi.Temp_IT_Contractor:
+    role: intern
+    display_name: "Xavi (Temp IT Contractor)"
+
+  yolanda.Temp_Finance_Clerk:
+    role: intern
+    display_name: "Yolanda (Temp Finance Clerk)"
+
+  zeb.Temp_Marketing_Analyst:
+    role: intern
+    display_name: "Zeb (Temp Marketing Analyst)"

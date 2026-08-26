@@ -1,0 +1,12 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+*.egg-info/
+.env
+
+# Generated reports and raw dataset downloads
+reports/
+data/orgaccess_raw/

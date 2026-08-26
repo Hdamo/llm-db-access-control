@@ -1,0 +1,882 @@
+# OrgAccess-aligned permission map — updated from dataset inspection (70,503 rows).
+#
+# Resource IDs use "<department>.<action>" dot notation, directly mirroring the
+# OrgAccess benchmark's schema: department controls WHAT data is touched,
+# action controls HOW it is touched.
+#
+# Canonical departments (normalized from dataset variants):
+#   hr, finance, it, marketing, sales, legal, engineering, compliance,
+#   security, executive, operations, analytics, audit, research,
+#   customer_support, product, risk
+#
+# Canonical actions (derived from allowed_actions frequencies):
+#   view     — read / View / read_only / query_data / view_reports
+#   edit     — write / Edit / update / modify
+#   approve  — approve / Approve / approve_budgets / approve_leave_requests
+#   delete   — delete / Delete / remove
+#   audit    — audit_logs / audit_operations / Audit / view_logs
+#   reports  — generate_reports / view_financial_reports / view_sales_data
+#   export   — export_data / export / Export
+#   admin    — admin / Administrator / modify_schema / manage_keys
+#   deploy   — deploy_code / Execute / execute
+#
+# Resolution order (unchanged from Phase 1 design):
+#   1. resource in denied_resources  → DENY  (explicit deny always wins)
+#   2. resource in allowed_resources → ALLOW
+#   3. no match                      → DENY  (default-deny / least privilege)
+#
+# Wildcards: "dept.*" matches any dept.anything; bare "*" matches everything.
+# Explicit deny beats wildcard allow.
+
+roles:
+
+  # ── C-suite & VP ──────────────────────────────────────────────────────────
+  executive:
+    description: >
+      C-suite executives and VPs (CEO, CFO, COO, CTO, VP_Engineering,
+      VP_Sales, VP_HR, VP_Marketing, VP_Product, VP_Executive_Operations,
+      Chief_Of_Staff, Field_Executive, Global_Marketing_Head,
+      Global_Sales_Executive).
+    allowed_resources:
+      - "*"
+    denied_resources: []
+
+  # ── Directors ─────────────────────────────────────────────────────────────
+  director:
+    description: >
+      Department directors and senior leadership below VP level
+      (Director_Finance, Director_IT, Director_Marketing,
+      Director_Operations, Director_Confidential_Services,
+      Board_Liaison, Personal_Secretary_CEO, Interdepartmental_Advisor,
+      Multi_Department_Supervisor).
+    allowed_resources:
+      - hr.view
+      - hr.edit
+      - hr.approve
+      - hr.reports
+      - hr.export
+      - finance.view
+      - finance.edit
+      - finance.approve
+      - finance.reports
+      - finance.export
+      - finance.audit
+      - it.view
+      - it.edit
+      - it.approve
+      - it.admin
+      - marketing.view
+      - marketing.edit
+      - marketing.approve
+      - marketing.reports
+      - marketing.export
+      - sales.view
+      - sales.edit
+      - sales.approve
+      - sales.reports
+      - sales.export
+      - legal.view
+      - legal.edit
+      - legal.approve
+      - engineering.view
+      - engineering.edit
+      - engineering.approve
+      - engineering.deploy
+      - compliance.view
+      - compliance.edit
+      - compliance.approve
+      - compliance.audit
+      - compliance.reports
+      - security.view
+      - security.audit
+      - executive.view
+      - operations.view
+      - operations.edit
+      - operations.approve
+      - operations.reports
+      - analytics.view
+      - analytics.edit
+      - analytics.reports
+      - analytics.export
+      - audit.view
+      - audit.reports
+      - research.view
+      - research.edit
+      - customer_support.view
+      - customer_support.edit
+      - product.view
+      - product.edit
+      - product.approve
+      - risk.view
+      - risk.edit
+      - risk.audit
+    denied_resources:
+      - executive.confidential
+      - executive.approve
+      - finance.delete
+      - hr.delete
+      - security.admin
+
+  # ── Senior Managers ────────────────────────────────────────────────────────
+  senior_manager:
+    description: >
+      Senior managers one level below director
+      (Senior_Manager_HR, Senior_Manager_Engineering, Senior_Manager_Marketing,
+      Senior_Manager_Sales, Senior_HR_Manager, Senior_Analyst,
+      Senior_Data_Scientist, Program_Manager, Project_Manager,
+      Key_Manager, Dual_Role_Manager, Multi_Client_Manager,
+      Escalation_Manager, Release_Manager).
+    allowed_resources:
+      - hr.view
+      - hr.edit
+      - hr.reports
+      - finance.view
+      - finance.reports
+      - it.view
+      - it.edit
+      - marketing.view
+      - marketing.edit
+      - marketing.approve
+      - marketing.reports
+      - marketing.export
+      - sales.view
+      - sales.edit
+      - sales.approve
+      - sales.reports
+      - legal.view
+      - engineering.view
+      - engineering.edit
+      - engineering.approve
+      - engineering.deploy
+      - compliance.view
+      - compliance.reports
+      - security.view
+      - operations.view
+      - operations.edit
+      - operations.reports
+      - analytics.view
+      - analytics.reports
+      - analytics.export
+      - audit.view
+      - research.view
+      - customer_support.view
+      - product.view
+      - product.edit
+      - product.approve
+      - risk.view
+    denied_resources:
+      - hr.delete
+      - hr.admin
+      - finance.approve
+      - finance.admin
+      - finance.delete
+      - it.admin
+      - it.delete
+      - executive.*
+      - security.admin
+      - engineering.admin
+      - audit.edit
+
+  # ── HR Professionals ───────────────────────────────────────────────────────
+  hr_manager:
+    description: >
+      HR managers and business partners
+      (HR_Manager, HR_Business_Partner, HR_Team_Lead, HR_Analytics_Lead,
+      HR_Budget_Controller, Assistant_Manager_HR, Head_of_HR_Operations,
+      Onboarding_HR_Specialist, Offboarding_HR_Specialist,
+      Compensation_and_Benefits_Specialist, Employee_Relations_Specialist,
+      Employee_Experience_Specialist, Learning_and_Development_Specialist,
+      Talent_Acquisition_Specialist, Recruitment_and_Onboarding_Coordinator).
+    allowed_resources:
+      - hr.view
+      - hr.edit
+      - hr.approve
+      - hr.reports
+      - hr.export
+      - hr.audit
+      - compliance.view
+      - compliance.reports
+      - analytics.view
+      - analytics.reports
+      - operations.view
+      - finance.view
+      - risk.view
+      - customer_support.view
+    denied_resources:
+      - hr.delete
+      - hr.admin
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - finance.admin
+      - it.admin
+      - it.deploy
+      - engineering.*
+      - sales.approve
+      - marketing.approve
+      - executive.*
+      - security.admin
+
+  hr_generalist:
+    description: >
+      HR generalists, coordinators, and administrators
+      (HR_Generalist, HR_Associate, HR_Coordinator, HR_Administrator,
+      HR_Data_Analyst, HR_Finance_Associate, HR_HR_Observer,
+      Recruitment_Coordinator).
+    allowed_resources:
+      - hr.view
+      - hr.edit
+      - hr.reports
+      - compliance.view
+      - analytics.view
+    denied_resources:
+      - hr.approve
+      - hr.delete
+      - hr.admin
+      - hr.export
+      - finance.*
+      - it.*
+      - engineering.*
+      - sales.*
+      - marketing.*
+      - executive.*
+      - security.*
+      - legal.edit
+      - audit.edit
+
+  # ── Finance Professionals ──────────────────────────────────────────────────
+  finance_manager:
+    description: >
+      Finance managers and controllers
+      (Finance_Manager, Finance_Officer, Finance_HR_Admin,
+      Payroll_Auditor_Finance, Director_Finance).
+    allowed_resources:
+      - finance.view
+      - finance.edit
+      - finance.approve
+      - finance.reports
+      - finance.export
+      - finance.audit
+      - analytics.view
+      - analytics.reports
+      - operations.view
+      - compliance.view
+      - risk.view
+      - risk.audit
+      - audit.view
+    denied_resources:
+      - finance.delete
+      - finance.admin
+      - hr.edit
+      - hr.delete
+      - it.admin
+      - it.deploy
+      - engineering.*
+      - executive.*
+      - security.admin
+      - marketing.approve
+      - sales.approve
+
+  finance_analyst:
+    description: >
+      Financial analysts and data specialists
+      (Financial_Analyst, Senior_Financial_Analyst, Finance_Data_Analyst,
+      Business_Intelligence_Analyst, CRM_Data_Analyst,
+      Market_Insights_Analyst, Sales_Operations_Analyst).
+    allowed_resources:
+      - finance.view
+      - finance.reports
+      - finance.export
+      - analytics.view
+      - analytics.reports
+      - analytics.export
+      - sales.view
+      - operations.view
+      - risk.view
+    denied_resources:
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - finance.admin
+      - hr.*
+      - it.admin
+      - it.deploy
+      - engineering.*
+      - executive.*
+      - security.*
+      - marketing.approve
+      - sales.approve
+
+  # ── Marketing Professionals ────────────────────────────────────────────────
+  marketing_manager:
+    description: >
+      Marketing managers and leads
+      (Marketing_Manager, Senior_Manager_Marketing, Marketing_Team_Lead,
+      Marketing_Lead, EU_Marketing_Manager, Senior_Marketing_Manager,
+      Senior_Marketing_Specialist, Global_Marketing_Head,
+      Admin_Assistant_Marketing).
+    allowed_resources:
+      - marketing.view
+      - marketing.edit
+      - marketing.approve
+      - marketing.reports
+      - marketing.export
+      - analytics.view
+      - analytics.reports
+      - analytics.export
+      - sales.view
+      - customer_support.view
+      - product.view
+      - research.view
+    denied_resources:
+      - marketing.delete
+      - marketing.admin
+      - finance.edit
+      - finance.approve
+      - finance.delete
+      - hr.*
+      - legal.edit
+      - it.admin
+      - engineering.*
+      - executive.*
+      - security.*
+
+  marketing_specialist:
+    description: >
+      Marketing specialists, coordinators, and analysts
+      (Marketing_Specialist, Marketing_Coordinator, Marketing_Analyst,
+      Marketing_Data_Specialist, Market_Researcher,
+      Admin_Assistant_Marketing, Customer_Data_Analyst,
+      Product_Data_Analyst).
+    allowed_resources:
+      - marketing.view
+      - marketing.edit
+      - marketing.reports
+      - analytics.view
+      - customer_support.view
+      - research.view
+    denied_resources:
+      - marketing.approve
+      - marketing.delete
+      - marketing.export
+      - finance.*
+      - hr.*
+      - legal.*
+      - it.admin
+      - engineering.*
+      - executive.*
+      - security.*
+      - sales.approve
+
+  # ── Sales Professionals ────────────────────────────────────────────────────
+  sales_manager:
+    description: >
+      Sales managers and team leads
+      (Sales_Team_Lead, Senior_Manager_Sales, Senior_Sales_Analyst,
+      Account_Manager_X, Global_Sales_Executive).
+    allowed_resources:
+      - sales.view
+      - sales.edit
+      - sales.approve
+      - sales.reports
+      - sales.export
+      - customer_support.view
+      - customer_support.edit
+      - marketing.view
+      - analytics.view
+      - analytics.reports
+      - product.view
+    denied_resources:
+      - sales.delete
+      - sales.admin
+      - finance.approve
+      - finance.edit
+      - hr.*
+      - legal.edit
+      - it.admin
+      - engineering.*
+      - executive.*
+      - security.*
+
+  sales_representative:
+    description: >
+      Individual sales contributors
+      (Sales_Representative, Account_Manager_X, Support_Analyst,
+      Support_Specialist, Support_Engineer, Support_Supervisor).
+    allowed_resources:
+      - sales.view
+      - sales.edit
+      - sales.reports
+      - customer_support.view
+      - marketing.view
+      - product.view
+    denied_resources:
+      - sales.approve
+      - sales.delete
+      - sales.export
+      - finance.*
+      - hr.*
+      - legal.*
+      - it.admin
+      - engineering.*
+      - executive.*
+      - security.*
+      - analytics.edit
+
+  # ── Legal Professionals ────────────────────────────────────────────────────
+  legal_counsel:
+    description: >
+      Legal team members
+      (Legal_Counsel, Legal_Associate, Legal_Team_Lead,
+      Contract_Reviewer, Policy_Compliance_Specialist, Policy_Editor,
+      Document_Control_Officer, Regulatory_Specialist,
+      Regulatory_Reviewer, Regulatory_Liaison, Regulatory_Inspector,
+      Governance_Inspector).
+    allowed_resources:
+      - legal.view
+      - legal.edit
+      - legal.approve
+      - legal.audit
+      - compliance.view
+      - compliance.reports
+      - hr.view
+      - finance.view
+      - risk.view
+      - audit.view
+    denied_resources:
+      - legal.delete
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - hr.edit
+      - hr.delete
+      - it.admin
+      - engineering.*
+      - marketing.edit
+      - sales.approve
+      - executive.*
+      - security.admin
+
+  # ── Compliance & Risk ──────────────────────────────────────────────────────
+  compliance_officer:
+    description: >
+      Compliance officers and managers
+      (Compliance_Officer, Compliance_Manager, Compliance_Auditor,
+      Compliance_Reviewer, Compliance_Officer_HR, Risk_Manager,
+      Regulatory_Specialist).
+    allowed_resources:
+      - compliance.view
+      - compliance.edit
+      - compliance.approve
+      - compliance.audit
+      - compliance.reports
+      - legal.view
+      - finance.view
+      - finance.audit
+      - hr.view
+      - audit.view
+      - audit.reports
+      - risk.view
+      - risk.edit
+      - risk.audit
+      - it.view
+      - security.view
+    denied_resources:
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - hr.edit
+      - hr.delete
+      - it.admin
+      - it.deploy
+      - engineering.*
+      - marketing.edit
+      - sales.approve
+      - executive.*
+      - security.admin
+
+  risk_manager:
+    description: >
+      Risk management professionals
+      (Risk_Manager, Data_Privacy_Officer, Crypto_Officer,
+      AI_Ethics_Officer, Ethical_AI_Officer).
+    allowed_resources:
+      - risk.view
+      - risk.edit
+      - risk.audit
+      - compliance.view
+      - compliance.audit
+      - finance.view
+      - finance.audit
+      - audit.view
+      - legal.view
+      - it.view
+      - security.view
+      - analytics.view
+    denied_resources:
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - hr.edit
+      - it.admin
+      - it.deploy
+      - engineering.*
+      - executive.*
+      - security.admin
+      - marketing.*
+      - sales.approve
+
+  # ── IT Professionals ───────────────────────────────────────────────────────
+  it_manager:
+    description: >
+      IT managers and senior technical leads
+      (IT_Manager, Director_IT, Network_Engineer, Senior_Network_Admin,
+      System_Admin, Infrastructure_Tech, DevOps_Engineer,
+      Disaster_Recovery_Lead, Cloud_Vendor_Admin,
+      IT_Integration_Consultant, ML_Admin).
+    allowed_resources:
+      - it.view
+      - it.edit
+      - it.approve
+      - it.admin
+      - it.audit
+      - it.deploy
+      - engineering.view
+      - engineering.edit
+      - security.view
+      - security.audit
+      - analytics.view
+      - operations.view
+      - compliance.view
+      - audit.view
+      - research.view
+    denied_resources:
+      - it.delete
+      - finance.edit
+      - finance.approve
+      - finance.delete
+      - hr.edit
+      - hr.delete
+      - executive.*
+      - marketing.edit
+      - sales.approve
+      - security.admin
+
+  it_support:
+    description: >
+      IT support and helpdesk staff
+      (IT_Support_Specialist, Helpdesk_Specialist, IT_Support,
+      System_Admin_Assistant, Data_Center_Technician,
+      Backup_Specialist, Log_Review_Officer).
+    allowed_resources:
+      - it.view
+      - it.edit
+      - it.audit
+      - customer_support.view
+      - operations.view
+    denied_resources:
+      - it.admin
+      - it.delete
+      - it.deploy
+      - it.approve
+      - finance.*
+      - hr.*
+      - legal.*
+      - engineering.deploy
+      - engineering.admin
+      - executive.*
+      - security.admin
+      - marketing.*
+      - sales.*
+
+  # ── Engineering & Development ──────────────────────────────────────────────
+  senior_engineer:
+    description: >
+      Senior software engineers and technical leads
+      (Senior_Software_Engineer, Engineering_Team_Lead,
+      Senior_Data_Scientist, ML_Engineer, AI_Engineer,
+      AI_Solutions_Architect, AI_Technical_Lead, Machine_Learning_Engineer,
+      Computer_Vision_Engineer, Natural_Language_Processing_Engineer,
+      Deep_Learning_Specialist, Robotics_Engineer, UX_Designer,
+      Technical_Writer, Release_Manager, Partner_Engineer).
+    allowed_resources:
+      - engineering.view
+      - engineering.edit
+      - engineering.approve
+      - engineering.deploy
+      - it.view
+      - it.edit
+      - research.view
+      - research.edit
+      - analytics.view
+      - analytics.reports
+      - product.view
+      - product.edit
+    denied_resources:
+      - engineering.delete
+      - engineering.admin
+      - finance.*
+      - hr.edit
+      - hr.delete
+      - executive.*
+      - marketing.approve
+      - sales.approve
+      - security.admin
+      - legal.edit
+
+  engineer:
+    description: >
+      Software and systems engineers
+      (Software_Engineer, Junior_Software_Engineer, DevOps_Engineer,
+      AI_Software_Developer, AI_Consultant, AI_Product_Manager,
+      Product_Manager, Business_Analyst, Support_Engineer,
+      Schema_Approval, External_Cloud_Technician).
+    allowed_resources:
+      - engineering.view
+      - engineering.edit
+      - engineering.deploy
+      - it.view
+      - research.view
+      - analytics.view
+      - product.view
+    denied_resources:
+      - engineering.approve
+      - engineering.admin
+      - engineering.delete
+      - finance.*
+      - hr.*
+      - executive.*
+      - marketing.approve
+      - sales.approve
+      - security.admin
+      - legal.edit
+      - compliance.edit
+
+  # ── Security ───────────────────────────────────────────────────────────────
+  security_analyst:
+    description: >
+      Security analysts and auditors
+      (Security_Analyst, Security_Auditor, Security_Team_Lead,
+      Security_Team, Security_Ops_Team_Member, Junior_Security_Analyst,
+      Security_Admin, Incident_Response_Engineer, Phishing_Specialist,
+      IT_Auditor, Audit_Team_Lead, Audit_Assistant).
+    allowed_resources:
+      - security.view
+      - security.edit
+      - security.audit
+      - it.view
+      - it.audit
+      - compliance.view
+      - compliance.audit
+      - audit.view
+      - audit.reports
+      - risk.view
+      - operations.view
+    denied_resources:
+      - security.admin
+      - finance.edit
+      - finance.approve
+      - hr.edit
+      - hr.delete
+      - marketing.*
+      - sales.*
+      - engineering.admin
+      - executive.*
+
+  # ── Audit ──────────────────────────────────────────────────────────────────
+  auditor:
+    description: >
+      Internal and external auditors
+      (Internal_Auditor, External_Auditor, IT_Auditor,
+      Audit_Team_Lead, Audit_Intern, Senior_Auditor,
+      Payroll_Auditor_Finance).
+    allowed_resources:
+      - audit.view
+      - audit.edit
+      - audit.reports
+      - finance.view
+      - finance.audit
+      - finance.reports
+      - hr.view
+      - hr.audit
+      - it.view
+      - it.audit
+      - compliance.view
+      - compliance.audit
+      - compliance.reports
+      - security.view
+      - security.audit
+      - operations.view
+      - risk.view
+    denied_resources:
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - hr.edit
+      - hr.delete
+      - it.admin
+      - it.deploy
+      - engineering.*
+      - marketing.*
+      - sales.*
+      - executive.*
+      - security.admin
+
+  # ── Data & Analytics ───────────────────────────────────────────────────────
+  data_analyst:
+    description: >
+      Data analysts and scientists
+      (Data_Analyst, Senior_Data_Analyst, Data_Scientist,
+      Business_Intelligence_Analyst, Market_Researcher,
+      AI_Data_Analyst, Data_Archivist, Data_Engineering_Intern,
+      Data_Privacy_Officer).
+    allowed_resources:
+      - analytics.view
+      - analytics.edit
+      - analytics.reports
+      - analytics.export
+      - research.view
+      - finance.view
+      - finance.reports
+      - sales.view
+      - marketing.view
+      - hr.view
+      - operations.view
+      - product.view
+    denied_resources:
+      - analytics.admin
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - hr.edit
+      - hr.delete
+      - it.admin
+      - it.deploy
+      - engineering.admin
+      - executive.*
+      - security.admin
+      - legal.edit
+      - compliance.edit
+
+  # ── Operations ─────────────────────────────────────────────────────────────
+  operations_manager:
+    description: >
+      Operations managers and coordinators
+      (Operations_Manager, COO-level ops, Logistics, Project_Manager,
+      Program_Manager, Field_Executive, Disaster_Recovery_Lead).
+    allowed_resources:
+      - operations.view
+      - operations.edit
+      - operations.approve
+      - operations.reports
+      - analytics.view
+      - analytics.reports
+      - finance.view
+      - it.view
+      - customer_support.view
+      - customer_support.edit
+      - product.view
+      - compliance.view
+      - risk.view
+    denied_resources:
+      - finance.approve
+      - finance.edit
+      - finance.delete
+      - hr.edit
+      - hr.delete
+      - it.admin
+      - it.deploy
+      - engineering.admin
+      - executive.*
+      - security.admin
+      - legal.edit
+      - marketing.approve
+
+  # ── Vendors & External ─────────────────────────────────────────────────────
+  vendor:
+    description: >
+      External vendors, contractors, and third-party support
+      (Vendor_Support, Vendor_Support_Engineer, External_Auditor,
+      External_Cloud_Technician, IT_Integration_Consultant,
+      Partner_Engineer, Cloud_Vendor_Admin).
+    allowed_resources:
+      - it.view
+      - customer_support.view
+      - operations.view
+    denied_resources:
+      - it.admin
+      - it.delete
+      - it.deploy
+      - finance.*
+      - hr.*
+      - legal.*
+      - engineering.admin
+      - engineering.delete
+      - executive.*
+      - security.admin
+      - marketing.*
+      - sales.*
+      - compliance.edit
+      - audit.edit
+
+  # ── Interns & New Hires ────────────────────────────────────────────────────
+  intern:
+    description: >
+      Interns, new hires, and temporary staff
+      (Engineering_Intern, Finance_Intern, Marketing_Intern,
+      IT_Intern, Data_Science_Intern, Data_Engineering_Intern,
+      Audit_Intern, HR_Intern, New_Hire, Temp_* roles,
+      Admin_Assistant_Finance, Admin_Assistant_HR,
+      Temp_Admin_Assistant, Temp_HR_Assistant, Temp_Finance_Clerk,
+      Temp_IT_Contractor, Temp_Marketing_Analyst, Temp_QA_Tester,
+      Temp_Security_Audit_Intern, Temp_Software_Documentation).
+    allowed_resources:
+      - hr.view
+      - finance.view
+      - it.view
+      - marketing.view
+      - sales.view
+      - engineering.view
+      - compliance.view
+      - analytics.view
+      - operations.view
+      - customer_support.view
+      - research.view
+      - product.view
+    denied_resources:
+      - hr.edit
+      - hr.approve
+      - hr.delete
+      - hr.audit
+      - hr.admin
+      - hr.export
+      - finance.edit
+      - finance.approve
+      - finance.delete
+      - finance.audit
+      - finance.admin
+      - finance.export
+      - it.edit
+      - it.approve
+      - it.delete
+      - it.admin
+      - it.deploy
+      - it.audit
+      - marketing.approve
+      - marketing.delete
+      - marketing.admin
+      - sales.approve
+      - sales.delete
+      - engineering.approve
+      - engineering.deploy
+      - engineering.delete
+      - engineering.admin
+      - compliance.edit
+      - compliance.approve
+      - security.*
+      - legal.edit
+      - legal.approve
+      - executive.*
+      - audit.edit
+      - analytics.edit
+      - risk.*

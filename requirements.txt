@@ -1,0 +1,10 @@
+ollama>=0.3.0
+pyyaml>=6.0
+pydantic>=2.0
+
+# only needed for src/load_orgaccess.py (fetching the OrgAccess benchmark)
+datasets>=2.19.0
+huggingface_hub>=0.23.0
+
+# only needed for src/report.py (Excel report generation)
+openpyxl>=3.1

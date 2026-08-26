@@ -1,0 +1,92 @@
+[
+  {
+    "user": "uma.Finance_Manager",
+    "query": "Show me the HR headcount numbers and generate this quarter's finance report.",
+    "mock_decomposition": {
+      "sub_queries": [
+        {
+          "text": "Show me the HR headcount numbers.",
+          "resource": "hr.view",
+          "rationale": "asks for HR data (view access)"
+        },
+        {
+          "text": "Generate this quarter's finance report.",
+          "resource": "finance.reports",
+          "rationale": "asks to generate a financial report"
+        }
+      ]
+    }
+  },
+  {
+    "user": "paula.HR_Generalist",
+    "query": "Pull up the department budget breakdown and approve the salary changes for this month.",
+    "mock_decomposition": {
+      "sub_queries": [
+        {
+          "text": "Pull up the department budget breakdown.",
+          "resource": "finance.view",
+          "rationale": "asks to view financial budget data"
+        },
+        {
+          "text": "Approve the salary changes for this month.",
+          "resource": "finance.approve",
+          "rationale": "asks to approve a financial action — restricted for hr_generalist"
+        }
+      ]
+    }
+  },
+  {
+    "user": "alex.CEO",
+    "query": "I need to review the executive confidential briefing and approve the Q3 budget.",
+    "mock_decomposition": {
+      "sub_queries": [
+        {
+          "text": "Review the executive confidential briefing.",
+          "resource": "executive.confidential",
+          "rationale": "asks for confidential executive data"
+        },
+        {
+          "text": "Approve the Q3 budget.",
+          "resource": "finance.approve",
+          "rationale": "asks to approve financial budget"
+        }
+      ]
+    }
+  },
+  {
+    "user": "max.Sales_Representative",
+    "query": "Give me my sales pipeline reports and pull the engineering deployment logs.",
+    "mock_decomposition": {
+      "sub_queries": [
+        {
+          "text": "Give me my sales pipeline reports.",
+          "resource": "sales.reports",
+          "rationale": "asks for own sales report data"
+        },
+        {
+          "text": "Pull the engineering deployment logs.",
+          "resource": "engineering.deploy",
+          "rationale": "asks for engineering deployment data — out of scope for sales_representative"
+        }
+      ]
+    }
+  },
+  {
+    "user": "tim.IT_Intern",
+    "query": "Can I view the IT audit logs and make edits to the network configuration?",
+    "mock_decomposition": {
+      "sub_queries": [
+        {
+          "text": "View the IT audit logs.",
+          "resource": "it.view",
+          "rationale": "asks to read IT system data — interns have view access"
+        },
+        {
+          "text": "Make edits to the network configuration.",
+          "resource": "it.edit",
+          "rationale": "asks to modify IT config — denied for interns"
+        }
+      ]
+    }
+  }
+]
