@@ -27,6 +27,29 @@ from src.resource_vocab import load_resource_vocab
 DEFAULT_MODEL = os.environ.get("LLMDB_OLLAMA_MODEL", "qwen2.5:7b-instruct")
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
+# Reliability guard added 2026-09-30, matching the fix already validated in
+# attribute_extract.py and baseline_check.py: a correct decomposition
+# response (a handful of sub-queries, each a few short fields) never needs
+# more than a few hundred tokens, so an uncapped, un-timed-out call has no
+# natural stopping point short of the model's full context window if the
+# model falls into a degenerate/repetitive generation. Observed directly on
+# this machine: a real row's request ran past 21,000 generated tokens on
+# qwen2.5:3b-instruct with no sign of stopping, stalling an unattended run
+# indefinitely. This file was originally left untouched as part of Phase 2's
+# "Phase 1 stays unmodified" constraint (see docs/phase2/plan.md) -- this is
+# a deliberate, narrow exception: it changes nothing about the decomposition
+# prompt or logic, and does not alter behavior for any row that completes
+# normally (every real response observed is far under this cap) -- it only
+# bounds the worst case instead of leaving it unbounded.
+MAX_PREDICT_TOKENS = int(os.environ.get("LLMDB_DECOMPOSE_MAX_TOKENS", "1024"))
+REQUEST_TIMEOUT_SECONDS = float(os.environ.get("LLMDB_OLLAMA_TIMEOUT", "240"))
+# See attribute_extract.py's NUM_CTX comment: the daemon's default context
+# length preallocates KV cache far beyond what a ~800-token prompt needs,
+# which is the actual driver of llama-server's oversized memory footprint
+# (not per-request growth). Capped explicitly here for the same reason.
+NUM_CTX = int(os.environ.get("LLMDB_OLLAMA_NUM_CTX", "4096"))
+_client = ollama.Client(timeout=REQUEST_TIMEOUT_SECONDS)
+
 
 class SubQuery(BaseModel):
     text: str            # the isolated sub-question, in natural language
@@ -78,15 +101,21 @@ def _build_system_prompt(vocab: List[str]) -> str:
 
 
 def _call_ollama(model: str, system_prompt: str, user_query: str) -> str:
-    response = ollama.chat(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_query},
-        ],
-        format="json",     # ask Ollama to constrain output to valid JSON
-        options={"temperature": 0.0},
-    )
+    try:
+        response = _client.chat(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_query},
+            ],
+            format="json",     # ask Ollama to constrain output to valid JSON
+            options={"temperature": 0.0, "num_predict": MAX_PREDICT_TOKENS, "num_ctx": NUM_CTX},
+        )
+    except Exception as e:
+        raise DecompositionError(
+            f"Ollama request to '{model}' failed or exceeded the "
+            f"{REQUEST_TIMEOUT_SECONDS:.0f}s timeout: {e}"
+        ) from e
     return response["message"]["content"]
 
 

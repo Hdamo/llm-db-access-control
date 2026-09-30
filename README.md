@@ -6,6 +6,20 @@ graph, session memory, or FragFuse-style attack simulation — those are
 future phases. This is just the foundation: split a query into sub-queries,
 check each one against a flat role → resource permission map.
 
+**Phase 2 (ABAC attribute checking against OrgAccess) and Baseline mode
+(no-decomposition floor) now exist alongside this, untouched Phase 1.** See
+[`docs/phase2/plan.md`](docs/phase2/plan.md) for what Phase 2 adds and why,
+[`docs/phase2/attribute-schema.md`](docs/phase2/attribute-schema.md) for the
+`config/attribute_rules.yaml` verdict-mapping config,
+[`docs/phase2/parallel-execution.md`](docs/phase2/parallel-execution.md) for
+running multiple queries/models concurrently, and
+[`docs/baseline/plan.md`](docs/baseline/plan.md) for Baseline mode. The full
+planned evaluation ladder (Baseline -> decomposition -> role/permission
+graphs -> conflict resolution -> full framework) and what's still unbuilt is
+tracked in [`docs/roadmap.md`](docs/roadmap.md). Quick start:
+`python -m src.pipeline --orgaccess-attr --splits easy --limit 20` (Phase 2)
+or `python -m src.pipeline --baseline --splits easy --limit 20` (Baseline).
+
 ## What this does
 
 ```
@@ -56,7 +70,7 @@ Key variables:
 
 | Variable | Default | Description |
 |---|---|---|
-| `LLMDB_MODE` | `mock` | Run mode: `mock` \| `live` \| `orgaccess` |
+| `LLMDB_MODE` | `mock` | Run mode: `mock` \| `live` \| `orgaccess` \| `orgaccess_attr` \| `baseline` |
 | `LLMDB_OLLAMA_MODEL` | `qwen2.5:7b-instruct` | Ollama model to use for decomposition |
 | `LLMDB_ORGACCESS_SPLITS` | `easy` | Comma-separated splits: `easy,medium,hard` (any combination) |
 | `LLMDB_ORGACCESS_LIMIT` | *(unset)* | Total rows to sample across all splits (leave blank for full dataset) |
@@ -91,9 +105,11 @@ python -m src.pipeline --user daniel.finance_manager \
 python -m src.pipeline
 
 # Explicit mode flags (override .env):
-python -m src.pipeline --mock        # offline, no Ollama, uses sample_queries.json
-python -m src.pipeline --live        # Ollama on, uses sample_queries.json
-python -m src.pipeline --orgaccess   # Ollama on, pulls from HuggingFace
+python -m src.pipeline --mock            # offline, no Ollama, uses sample_queries.json
+python -m src.pipeline --live            # Ollama on, uses sample_queries.json
+python -m src.pipeline --orgaccess       # Ollama on, pulls from HuggingFace (Phase 1, flat role check)
+python -m src.pipeline --orgaccess-attr  # Ollama on, ABAC checklist against each row's own permissions (Phase 2)
+python -m src.pipeline --baseline        # Ollama on, one holistic verdict per row, no decomposition (Baseline)
 
 # OrgAccess with multiple splits + random sample of 500 + reproducible seed:
 python -m src.pipeline --orgaccess --splits easy medium hard \
@@ -117,7 +133,9 @@ python -m src.pipeline --live --model llama3.1:8b-instruct-q4_K_M
 |---|---|---|---|
 | `mock` | No | `examples/sample_queries.json` (canned) | Verifying access-check logic offline; CI; demo before Ollama is set up |
 | `live` | Yes | `examples/sample_queries.json` | Testing decomposer + access-check together on known queries |
-| `orgaccess` | Yes | `respai-lab/orgaccess` on HuggingFace | Stress-testing the pipeline on real benchmark queries |
+| `orgaccess` | Yes | `respai-lab/orgaccess` on HuggingFace | Stress-testing the pipeline on real benchmark queries (Phase 1, flat role check) |
+| `orgaccess_attr` | Yes | `respai-lab/orgaccess` on HuggingFace | ABAC checklist against each row's own `permissions` dict (Phase 2, see `docs/phase2/plan.md`) |
+| `baseline` | Yes | `respai-lab/orgaccess` on HuggingFace | One holistic LLM verdict, no decomposition — the floor Phase 1/2 are measured against (see `docs/baseline/plan.md`) |
 
 ---
 
@@ -134,7 +152,9 @@ When `LLMDB_MODE=orgaccess` (or `--orgaccess`), the pipeline:
 Because OrgAccess uses a free-form permission schema that doesn't map 1:1
 to our `table.field` vocabulary, most resources will be tagged `UNKNOWN`
 and verdicts will be `REJECTED`. This is **expected for Phase 1** — the
-mismatch is what the Phase 2 schema-alignment layer will address.
+mismatch is what Phase 2 addresses (see `docs/phase2/plan.md`) by checking
+each OrgAccess row against its own permissions dict directly
+(`--orgaccess-attr` mode) instead of a fixed `table.field` vocabulary.
 
 ```bash
 # .env settings for a multi-split orgaccess run with report:
@@ -199,6 +219,11 @@ resource default-deny, and unknown user handling.
 | `src/report.py` | Generates the Excel report. Uses openpyxl write-only (streaming) mode — memory stays flat at 75k rows. `generate_report_with_meta()` is the main entry point from `run_orgaccess()`. |
 | `examples/sample_queries.json` | 5 example queries across all 4 roles, each with a canned mock decomposition for offline demoing, covering FULL, PARTIAL, and REJECTED outcomes. |
 | `tests/test_access_check.py` | Unit tests for the permission logic. |
+| `src/role_resolution.py` | Maps OrgAccess `user_role` strings onto `config/users.yaml` roles (used by `run_full_eval.py`'s Phase 1 sweep; not used by Phase 2, which checks each row's own permissions directly). |
+| `src/judge.py` | LLM-judge normalizer for OrgAccess's ~39 messy `expected_response` label variants. Used by both `run_full_eval.py` and `run_full_eval_v2.py`. |
+| `src/run_full_eval.py` | Phase 1 full-dataset eval harness: checkpointed, resumable, Excel report, now with opt-in `--workers`/`--models` concurrency (see `docs/phase2/parallel-execution.md`). |
+| **Phase 2** (`docs/phase2/plan.md`) | `src/attribute_extract.py`, `src/attribute_check.py`, `config/attribute_rules.yaml`, `src/run_full_eval_v2.py`, `src/parallel_runner.py` — ABAC attribute checking against OrgAccess's own per-row permissions. Fully additive; none of the rows above changed. |
+| **Baseline** (`docs/baseline/plan.md`) | `src/baseline_check.py`, `src/run_full_eval_baseline.py` — one LLM call per row, no decomposition, no deterministic aggregation. Rung zero of the evaluation ladder in `docs/roadmap.md`. Fully additive; none of the rows above changed. |
 
 ---
 
@@ -223,13 +248,18 @@ resource default-deny, and unknown user handling.
 
 ---
 
-## Explicitly NOT in this phase
+## Explicitly not built yet
 
-- No relationship graph / ReBAC join-sensitivity edges
-- No cross-query or session-level memory
+- No hierarchical role/permission graph (role inheritance) — planned as
+  Phase 3a
+- No relationship graph / ReBAC join-sensitivity edges — planned as Phase 3b
+- No cross-query or session-level memory (needed by Phase 3b)
+- No formal conflict-resolution mechanism beyond Phase 2's core/soft
+  aggregation rule
 - No FragFuse-style attack simulation or leakage-rate benchmarking
 - No RAG/vector DB integration
 - No schema-alignment layer between OrgAccess permissions and `table.field` vocab
 
-These are the next phases, once this foundation is validated with your
-professor.
+See [`docs/roadmap.md`](docs/roadmap.md) for the full progressive
+evaluation ladder, what each of the above depends on, and concrete plug-in
+points in the existing code for when this work starts.

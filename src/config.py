@@ -10,7 +10,7 @@ this module just supplies the defaults so you don't have to repeat them
 on every invocation.
 
 Supported env vars:
-    LLMDB_MODE                   mock | live | orgaccess     (default: mock)
+    LLMDB_MODE                   mock | live | orgaccess | orgaccess_attr | baseline   (default: mock)
     LLMDB_OLLAMA_MODEL           Ollama model name            (default: qwen2.5:7b-instruct)
     LLMDB_ORGACCESS_SPLITS       comma-sep splits             (default: easy)
     LLMDB_ORGACCESS_SPLIT        deprecated singular alias    (fallback if SPLITS not set)
@@ -28,10 +28,10 @@ from typing import Literal, Optional
 ROOT = Path(__file__).resolve().parent.parent
 _DOTENV_PATH = ROOT / ".env"
 
-VALID_MODES = ("mock", "live", "orgaccess")
+VALID_MODES = ("mock", "live", "orgaccess", "orgaccess_attr", "baseline")
 VALID_SPLITS = ("easy", "medium", "hard")
 
-Mode = Literal["mock", "live", "orgaccess"]
+Mode = Literal["mock", "live", "orgaccess", "orgaccess_attr", "baseline"]
 OrgAccessSplit = Literal["easy", "medium", "hard"]
 
 

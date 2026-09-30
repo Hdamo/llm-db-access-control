@@ -265,6 +265,38 @@ partial, wildcard-allow, unknown-resource-default-deny,
 unknown-user-raises. Run with `python3 tests/test_access_check.py`
 (plain assertions, no pytest dependency — prints PASS/FAIL per test).
 
+### `src/baseline_check.py` — Baseline mode: one LLM call, no decomposition
+**Public function:**
+```python
+get_baseline_verdict(
+    user_query: str,
+    permissions: Union[str, dict, None],
+    user_role: str = "",
+    model: str = DEFAULT_MODEL,
+    max_retries: int = 1,
+) -> BaselineResult
+```
+Same input as Phase 2's `extract_attributes` (a row's own `permissions`
+dict, via the same `parse_permissions()` from `attribute_extract.py`), but
+one Ollama call producing one holistic `{verdict, reasoning}` JSON object —
+no per-field checklist, no separate deterministic aggregation step. This is
+rung zero of the progressive evaluation ladder: the floor Phase 1 and Phase
+2's decomposition+aggregation structure is measured against. See
+`docs/baseline/plan.md` for why it exists and `docs/roadmap.md` for how it
+fits with the still-unbuilt graph-based rungs.
+
+Carries the same reliability guards Phase 2 added after a real incident (see
+`docs/phase2/parallel-execution.md`): a `num_predict` cap
+(`MAX_PREDICT_TOKENS`) and a client-side timeout (`REQUEST_TIMEOUT_SECONDS`,
+shared env var `LLMDB_OLLAMA_TIMEOUT` with `attribute_extract.py`).
+
+### `src/run_full_eval_baseline.py` — eval harness for Baseline mode
+Same crash-resumable JSONL checkpointing / progress-ETA logging / Excel
+report / `--workers`+`--models` shape as `run_full_eval_v2.py`, calling
+`get_baseline_verdict` per row instead of `attribute_extract`+
+`attribute_check`. Default sample (`easy medium hard`, limit 1000, seed 42)
+matches both other harnesses exactly for direct comparison.
+
 ### `.gitignore`, `requirements.txt`, `README.md`
 Standard housekeeping. `requirements.txt` splits into two logical
 groups: the three actually used by the live pipeline
@@ -300,10 +332,12 @@ Example: `python -m src.pipeline --user daniel.finance_manager --query "Show me 
 | Add/remove a user | `config/users.yaml` only | |
 | Change how sub-queries are tagged (e.g. multi-resource tags, confidence scores) | `src/decompose.py` (`SubQuery` model + prompt) | Will also require updating `access_check.py`'s `check_resource` signature if the tag shape changes. |
 | Change the allow/deny/default-deny logic | `src/access_check.py` (`check_resource`, `_matches`) | Unit tests in `tests/test_access_check.py` should be extended alongside any change here. |
-| Add the relationship graph / ReBAC layer (Phase 2) | New module, e.g. `src/graph_check.py`, called from `pipeline.py` alongside or instead of `access_check.py` | `QueryResult`/`SubQueryResult` dataclasses will likely need a session/history field added. |
-| Add cross-query / session memory (Phase 2) | `src/pipeline.py` — needs a session object threaded through `run_single` calls | Currently every `run_single` call is fully independent/stateless; this is the biggest structural change coming. |
-| Wire in the OrgAccess dataset as an eval harness (later phase) | New module, e.g. `src/eval_orgaccess.py`, reading `data/orgaccess_raw/*.jsonl` | Needs a schema-translation layer since OrgAccess's permission dicts don't map 1:1 to `table.field` resource IDs yet — that translation logic doesn't exist anywhere currently. |
-| Swap/add Ollama models | No code change | `--model` flag or `LLMDB_OLLAMA_MODEL` env var. |
+| Wire in the OrgAccess dataset as an ABAC eval harness (**Phase 2 — done**, see `docs/phase2/plan.md`) | `src/attribute_extract.py`, `src/attribute_check.py`, `config/attribute_rules.yaml`, `src/run_full_eval_v2.py`, new `orgaccess_attr` pipeline mode | Checks each OrgAccess row against its OWN `permissions` dict (not a fixed `table.field` vocabulary or a role table) — no relationship graph turned out to be needed; the real gap was multi-field ABAC reasoning, not org-hierarchy traversal. See `docs/phase2/plan.md` for what the paper's dataset actually contains vs. what was originally guessed here. |
+| Measure the floor decomposition is compared against (**Baseline — done**, see `docs/baseline/plan.md`) | `src/baseline_check.py`, new `baseline` pipeline mode, `src/run_full_eval_baseline.py` | One LLM call, same permissions input as Phase 2, no checklist, no deterministic aggregation. Rung zero of the ladder in `docs/roadmap.md`. |
+| Add role inheritance (**Phase 3a, hierarchical role/permission graph — not started**, see `docs/roadmap.md`) | `config/permissions.yaml` (or a new `config/role_hierarchy.yaml`), `src/role_resolution.py`, `src/access_check.py`'s `check_resource` | Flat role table today has no parent/child relationship between roles at all. |
+| Add cross-resource / ReBAC checking (**Phase 3b, relationship graph — not started**, see `docs/roadmap.md`) | New module (e.g. `src/relationship_graph.py`), new config (e.g. `config/resource_graph.yaml`), `src/pipeline.py` for the session object this needs | This is the FragFuse-style combinatorial-disclosure gap in section 5 below — needs cross-query/session memory to be meaningful, not just a graph. |
+| Add cross-query / session memory (needed by Phase 3b above) | `src/pipeline.py` — needs a session object threaded through `run_single`/`run_baseline`/`run_orgaccess_attr` calls | Currently every call is fully independent/stateless; still true after Phase 2 and Baseline, which are also per-query. |
+| Swap/add Ollama models | No code change | `--model` flag or `LLMDB_OLLAMA_MODEL` env var (Baseline: `LLMDB_BASELINE_MODEL` if set independently). |
 
 ---
 
@@ -311,9 +345,104 @@ Example: `python -m src.pipeline --user daniel.finance_manager --query "Show me 
 
 - Every `run_single` / `check_query` call is **stateless** — no memory of
   prior queries in the same session. This is exactly the gap FragFuse-style
-  attacks exploit, and it's the whole point of the next phase.
+  attacks exploit, and it's still true after Phase 2 (see below) — cross-
+  query/session memory is still not implemented.
 - `access_check.py` only ever sees resources one at a time — it has no
   concept of "these two resources together reveal something neither does
   alone."
-- `load_orgaccess.py` is disconnected from everything else — data sits on
-  disk, unused, until the eval-harness phase translates its schema.
+- `load_orgaccess.py` is now used by both Phase 1 (`orgaccess` mode) and
+  Phase 2 (`orgaccess_attr` mode) via the same
+  `load_as_pipeline_examples_multi()` — it is no longer disconnected.
+
+## 6. Phase 2 (added; see `docs/phase2/plan.md` for full detail)
+
+Phase 1's `table.field` closed vocabulary and flat role table cannot
+represent OrgAccess's real permission schema (each row has its own
+multi-field ABAC-style `permissions` dict — department, access_level,
+allowed_actions, location_restriction, numeric thresholds, booleans,
+delegation/quorum, ~90 distinct field names total). Phase 2 adds a parallel
+path that checks each row against **its own** permissions dict instead of a
+shared config:
+
+```
+   OrgAccess row  ┌──────────────────────────────┐
+   (query +        │ src/attribute_extract.py      │  per-field checklist:
+    permissions) ─►│ (Ollama, one call per row)     │  applicable? allow/deny?
+                    └──────────────┬─────────────────┘
+                                   ▼
+                    ┌──────────────────────────────┐   config/attribute_rules.yaml
+                    │ src/attribute_check.py         │◄─ (severity: core -> REJECTED,
+                    │ (deterministic aggregation)     │   soft -> PARTIAL; PROVISIONAL,
+                    └──────────────┬─────────────────┘   pending author's mapping)
+                                   ▼
+                    FULL / PARTIAL / REJECTED
+```
+
+Entry points: `python -m src.pipeline --orgaccess-attr` (single sweep,
+prints results) and `python -m src.run_full_eval_v2` (checkpointed bulk eval
+with Excel report, mirroring `run_full_eval.py`'s shape). Neither touches
+any Phase 1 file. See `docs/phase2/plan.md`, `docs/phase2/attribute-schema.md`,
+and `docs/phase2/parallel-execution.md` for the full design rationale,
+including a documented real-data case where the current placeholder
+severity mapping produces the wrong verdict (`biometric_required`), left
+as-is pending the authoritative mapping.
+
+## 7. Baseline mode (added; see `docs/baseline/plan.md` for full detail)
+
+Phase 1 and Phase 2 both decompose the query before deciding — they differ
+in *what* they decompose against, not *whether* they decompose. Baseline
+removes the decomposition/checklist and the separate deterministic
+aggregation step entirely, holding the input information constant (the same
+`permissions` dict Phase 2 reads) so the comparison isolates the structure's
+contribution, not the information's:
+
+```
+   OrgAccess row  ┌──────────────────────────────┐
+   (query +        │ src/baseline_check.py         │  ONE call, ONE verdict:
+    permissions) ─►│ (Ollama, one call per row,     │  no checklist, no
+                    │  no decomposition)             │  separate aggregation
+                    └──────────────┬─────────────────┘
+                                   ▼
+                    FULL / PARTIAL / REJECTED  (+ one-line reasoning)
+```
+
+Entry points: `python -m src.pipeline --baseline` (single sweep, prints
+results) and `python -m src.run_full_eval_baseline` (checkpointed bulk eval
+with Excel report, same default 1,000-query sample as the other two
+harnesses). Neither touches any Phase 1 or Phase 2 file.
+
+## 8. Roadmap — the graph-based rungs (designed, not yet built; see `docs/roadmap.md` and `docs/phase3/`)
+
+The full progressive ladder is: Baseline -> + Query decomposition (Phase 1
+& 2, both done; Baseline done too — 40.8% agreement, zero FULL verdicts) ->
++ Hierarchical role/permission graph -> + Role-permission mapping -> +
+Conflict-resolution mechanism -> Full framework. The graph rung itself
+splits into three sub-phases, each with a full architecture design written
+in `docs/phase3/` (informed by web research on hierarchical RBAC/Zanzibar-
+style ReBAC/FAVA's SMT-verified permission graphs, an empirical check of
+whether OrgAccess's own role-name strings support a mined hierarchy — they
+only cleanly do for ~20% of roles — and arXiv 2609.09153's self-evolving
+"procedural graphs" concept, adapted for access-control severity tuning
+rather than agent execution flow):
+
+- **Phase 3a — hierarchical role/permission graph** (role inheritance, a
+  small hand-authored tree over the 24 canonical Phase 1 roles, not mined
+  from the dataset's raw role strings). See `docs/phase3/role-hierarchy.md`
+  for the concrete spine, `config/role_hierarchy.yaml` shape, and the
+  precedence policy (own rules always resolve before any inherited rule).
+- **Phase 3b — relationship graph / ReBAC** (cross-resource
+  combinatorial-disclosure detection — the FragFuse-style gap named in
+  section 5 above). See `docs/phase3/relationship-graph.md` — explicitly
+  scoped as a stretch goal, not a benchmarked rung, since it needs both new
+  session-memory infrastructure and new ground truth OrgAccess can't
+  supply.
+- **Phase 3c — self-evolving refinement** (new addition to the ladder, not
+  originally planned): an LLM refiner proposes edits to
+  `config/attribute_rules.yaml`'s severity mapping, validated on a held-out
+  split before committing — see `docs/phase3/self-evolution.md`. Reuses
+  100% existing infrastructure (checkpoints, judge scores, splits), so it's
+  the recommended **first** build, ahead of 3a.
+
+`docs/roadmap.md` has the ladder-level status view; `docs/phase3/plan.md`
+has the full comparison table (3a vs. 3b vs. FAVA vs. 3c) and the
+recommended build order with reasoning.

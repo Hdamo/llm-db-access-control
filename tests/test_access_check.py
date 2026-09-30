@@ -11,12 +11,14 @@ Run:
     python tests/test_access_check.py
 """
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.access_check import PermissionStore, check_query, Verdict, Decision
 from src.decompose import DecompositionResult
+from src.role_hierarchy import RoleHierarchy, RoleHierarchyError
 
 
 def make_decomp(*resources):
@@ -218,6 +220,65 @@ def test_auditor_read_only():
     )
     assert result_allow.verdict == Verdict.FULL
     assert result_deny.verdict == Verdict.REJECTED
+
+
+# ── Phase 3a: role hierarchy inheritance ──────────────────────────────────────
+
+def test_hierarchy_own_deny_overrides_inherited_allow():
+    """senior_manager explicitly denies 'finance.approve', even though its
+    descendant finance_manager explicitly ALLOWS it -- a role's own rules
+    are checked in full before any descendant is ever consulted, so the
+    own-level deny wins regardless of what's inherited."""
+    store = PermissionStore()
+    result = check_query(
+        "amy.Senior_Manager_HR", "q",
+        make_decomp("finance.approve"),
+        store,
+    )
+    assert result.verdict == Verdict.REJECTED, f"Expected REJECTED, got {result.verdict}"
+    assert result.sub_results[0].decision == Decision.DENY
+    assert "descendant" not in result.sub_results[0].reason, (
+        "own-rule deny should resolve before any descendant is consulted"
+    )
+
+
+def test_hierarchy_inherits_allow_from_descendant_when_silent():
+    """senior_manager's own rules say nothing about 'hr.audit', but its
+    descendant hr_manager explicitly allows it -- senior_manager should
+    inherit that ALLOW (senior inherits from junior, per
+    docs/phase3/role-hierarchy.md's corrected direction)."""
+    store = PermissionStore()
+    result = check_query(
+        "amy.Senior_Manager_HR", "q",
+        make_decomp("hr.audit"),
+        store,
+    )
+    assert result.verdict == Verdict.FULL, f"Expected FULL, got {result.verdict}"
+    assert result.sub_results[0].decision == Decision.ALLOW
+    assert "descendant" in result.sub_results[0].reason, (
+        "reason should be attributed to inheritance, not an own-level match"
+    )
+
+
+def test_hierarchy_cycle_raises_at_load_time():
+    """A cycle in role_hierarchy.yaml must raise RoleHierarchyError when the
+    file is loaded, not silently succeed or fail later at query time."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False, encoding="utf-8"
+    ) as f:
+        f.write(
+            "roles:\n"
+            "  a: { parent: b }\n"
+            "  b: { parent: a }\n"
+        )
+        temp_path = f.name
+    try:
+        RoleHierarchy(known_roles={"a", "b"}, hierarchy_path=temp_path)
+        assert False, "should have raised RoleHierarchyError for a cycle"
+    except RoleHierarchyError:
+        pass  # expected
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

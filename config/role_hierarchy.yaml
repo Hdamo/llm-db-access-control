@@ -1,0 +1,52 @@
+# Phase 3a role hierarchy -- see docs/phase3/role-hierarchy.md for the full
+# design, including the corrected inheritance direction (senior roles
+# inherit from junior/descendant roles, never the reverse).
+#
+# Every key here must match a role key in config/permissions.yaml exactly,
+# and every permissions.yaml role must appear here exactly once --
+# src/role_hierarchy.py validates both at load time. `parent: null` means
+# the role has no senior above it in this tree (executive, intern, vendor).
+#
+# This is a single-parent TREE, not a general DAG: no role has two parents.
+# See docs/phase3/role-hierarchy.md for why that's the deliberate v1 scope.
+
+roles:
+  # Root
+  executive:            { parent: null }
+
+  # Director tier
+  director:              { parent: executive }
+
+  # Senior-manager tier
+  senior_manager:         { parent: director }
+
+  # Department-manager tier (children of senior_manager)
+  hr_manager:              { parent: senior_manager }
+  finance_manager:         { parent: senior_manager }
+  marketing_manager:       { parent: senior_manager }
+  sales_manager:           { parent: senior_manager }
+  it_manager:              { parent: senior_manager }
+  senior_engineer:         { parent: senior_manager }
+  operations_manager:      { parent: senior_manager }
+
+  # Individual-contributor tier (children of the department managers above)
+  hr_generalist:            { parent: hr_manager }
+  finance_analyst:          { parent: finance_manager }
+  marketing_specialist:     { parent: marketing_manager }
+  sales_representative:     { parent: sales_manager }
+  it_support:               { parent: it_manager }
+  engineer:                 { parent: senior_engineer }
+
+  # Specialist roles -- no junior/senior pair at this granularity, so they
+  # hang directly off director as leaves (see role-hierarchy.md).
+  legal_counsel:          { parent: director }
+  compliance_officer:     { parent: director }
+  risk_manager:           { parent: director }
+  security_analyst:       { parent: director }
+  auditor:                { parent: director }
+  data_analyst:           { parent: director }
+
+  # Untethered leaves -- no senior above them in this tree, and (being
+  # leaves) nothing to inherit from either, under the corrected direction.
+  intern:                { parent: null }
+  vendor:                { parent: null }

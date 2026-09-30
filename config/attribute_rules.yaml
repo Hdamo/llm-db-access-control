@@ -1,0 +1,500 @@
+# Phase 2 ABAC verdict-mapping rules for OrgAccess attribute checking.
+# See docs/phase2/attribute-schema.md for the full explanation.
+
+_PROVISIONAL: This severity mapping (core vs soft) is a PLACEHOLDER seeded from the OrgAccess paper's
+  own wording (partial is reserved for location, collaboration, and ethical-guideline constraints; every
+  other breach is rejected). The paper does not publish a formal field-by-field rule. The user is getting
+  the authoritative mapping from the paper's author directly -- when that arrives, update ONLY the `severity`
+  values below. No code changes are needed elsewhere; src/attribute_check.py reads this file at runtime.
+default_severity: core
+
+# Phase 3c self-evolving refinement (see docs/phase3/self-evolution.md) proposed flipping
+# biometric_required from core to soft on 2026-09-29, based on a held-out-split validation
+# (69.9% -> 70.6% on the `hard` split, reports/phase3c_refinement_report.json). A full 1,000-row
+# re-run on 2026-09-30 (reports/full_eval_v2_updated_checkpoint.jsonl) found the change did NOT
+# generalize -- 40.9% pooled vs. 41.5% on the original run, and 40.9% vs. 40.6% on a same-model
+# (3B-only) comparison that isolates the rule change from a model-mix confound: a +0.3pp
+# difference, within noise. Reverted back to core on 2026-09-30. Kept as a documented finding,
+# not a live change -- see docs/phase3/self-evolution.md's "Result" section.
+severity_meaning:
+  core: A denied sub-ask governed by this field forces the whole query to REJECTED.
+  soft: A denied sub-ask governed ONLY by soft fields (with no core violation) yields PARTIAL instead
+    of REJECTED.
+fields:
+  access_level:
+    type: ordinal
+    severity: core
+    observed_value_types:
+      str: 70503
+  allow_competitor_data_access:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 15
+  allowed_actions:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 70503
+  anonymize_pii:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 1019
+  api_rate_limit:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  approval_threshold:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 1020
+  audit_log_requirement:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  automation_restriction:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 4913
+  biometric_authentication_required:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 20
+  biometric_required:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 4395
+  budget_approval_threshold:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  budget_threshold_variance:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  client_restriction:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 5550
+  code_deployment_permissions:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 10
+  collaboration_access:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 3426
+  competitor_data_access_permission:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  competitor_restriction:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 4732
+  completed_training:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 9
+  compliance_training_prerequisites:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 10
+  context_restriction:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 998
+  cryptographic_approval_quorom_required:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 13
+  current_date:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 10
+  customer_data_access:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  data_export_allowance:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  data_restoration_permission:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 13
+  data_retention_period_in_years:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 15
+  data_sensitivity:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      dict: 1009
+      list: 3442
+  deadline:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 4438
+  deadline_date:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 1002
+  delegated_by:
+    type: freeform_string
+    severity: core
+    observed_value_types:
+      str: 1002
+  delegated_permission:
+    type: freeform_string
+    severity: core
+    observed_value_types:
+      str: 1002
+  department:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 70503
+  departmental_access:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 10
+  departments_allowed_for_collaboration:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 10
+  device_compliance:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 4457
+  disaster_mode:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 6589
+  emergency_override:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 5261
+  emergency_override_permission:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 3
+  emergency_override_permissions:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 7
+  employee_onboarding_or_offboarding:
+    type: freeform_string
+    severity: core
+    observed_value_types:
+      str: 5
+  environment_restriction:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 4729
+  ethical_ai_guideline:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 15
+  ethical_guideline_permission:
+    type: freeform_string
+    severity: soft
+    observed_value_types:
+      str: 10
+  ethical_guidelines:
+    type: freeform_string
+    severity: soft
+    observed_value_types:
+      str: 5196
+      list: 10
+  expiry_date:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 4432
+  export_restriction:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 6698
+  geolocation_based_access:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 13
+  incident_occurence:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 20
+  incident_occurence_required:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 13
+  incident_occurence_requirement:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  incident_required:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 5542
+  inter_department_collaboration_access:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 10
+  location_restriction:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 4317
+  log_required:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 5000
+  machine_learning_model_access:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 10
+  mask_sensitive:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 4781
+  mask_senstive_data:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  masked_data_access_permissions:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  maximum_api_calls_allowed:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  maximum_document_version_allowed:
+    type: freeform_string
+    severity: core
+    observed_value_types:
+      str: 10
+  model_restriction:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 4520
+  nation_wise_location_restrictions:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 20
+  password_rotation:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 5123
+  password_rotation_in_days:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  password_rotation_time_in_days:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  personal_device_compliance:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  phishing_detection:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 5197
+  phishing_detection_permission:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 10
+  priority_threshold:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 4237
+  project_deadline:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 10
+  project_reporting_deadline:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 10
+  quorum_required:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 4026
+  rate_limit:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 4299
+  region_restriction:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 7443
+  regional_data_restrictions:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 10
+  regional_restrictions:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 30
+  regions_available:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 10
+  retention_period:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 4583
+      int: 10
+  review_frequency:
+    type: temporal
+    severity: core
+    observed_value_types:
+      str: 4209
+  schema_approval:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 5082
+  schema_approval_people:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 10
+  session_timeout:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 4694
+  session_timeout_in_minutes:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 10
+  shadow_it_override:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 4675
+  social_engineering_protections:
+    type: boolean
+    severity: core
+    observed_value_types:
+      bool: 5
+  software_version_restriction:
+    type: freeform_string
+    severity: core
+    observed_value_types:
+      str: 10
+  third_party_provider:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 10
+  threshold_variance:
+    type: numeric_threshold
+    severity: core
+    observed_value_types:
+      int: 1020
+  time_restriction:
+    type: structured
+    severity: core
+    observed_value_types:
+      dict: 998
+      list: 3
+  training_required:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      list: 5533
+      bool: 10
+  vendor_restriction:
+    type: list_membership
+    severity: core
+    observed_value_types:
+      str: 1004
+      list: 3381
+  version_restriction:
+    type: freeform_string
+    severity: core
+    observed_value_types:
+      str: 5555
+      list: 10
+  zonal_restrictions:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 10
+  zone_restriction:
+    type: list_membership
+    severity: soft
+    observed_value_types:
+      list: 4557

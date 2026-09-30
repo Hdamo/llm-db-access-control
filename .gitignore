@@ -10,3 +10,7 @@ __pycache__/
 # Generated reports and raw dataset downloads
 reports/
 data/orgaccess_raw/
+data/orgaccess_schema.json
+
+# Docs (papers, LaTeX build artifacts, large reference PDFs) -- not pushed
+docs/
