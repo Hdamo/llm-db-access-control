@@ -3,22 +3,28 @@ Print the same summary the Excel report would show, directly from a
 checkpoint JSONL file -- no Excel/GUI needed, works over plain SSH.
 
 Usage:
+    python cluster/read_report.py                         # all 3 default paths
     python cluster/read_report.py reports/full_eval_baseline_checkpoint.jsonl
-    python cluster/read_report.py reports/full_eval_checkpoint.jsonl
-    python cluster/read_report.py reports/full_eval_v2_checkpoint.jsonl
+    python cluster/read_report.py path1.jsonl path2.jsonl  # any subset
 """
 from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
+
+DEFAULT_PATHS = [
+    "reports/full_eval_baseline_checkpoint.jsonl",
+    "reports/full_eval_checkpoint.jsonl",
+    "reports/full_eval_v2_checkpoint.jsonl",
+]
 
 
-def main() -> None:
-    if len(sys.argv) != 2:
-        print(f"Usage: python {sys.argv[0]} <checkpoint.jsonl>", file=sys.stderr)
-        sys.exit(1)
+def report_one(path: str) -> None:
+    if not Path(path).exists():
+        print(f"File: {path}  -- not found yet, skipping\n")
+        return
 
-    path = sys.argv[1]
     rows = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -58,6 +64,13 @@ def main() -> None:
         f"NO: {judge_counts['no']} ({jpct(judge_counts['no'])})  |  "
         f"UNCERTAIN: {judge_counts['uncertain']} ({jpct(judge_counts['uncertain'])})"
     )
+    print()
+
+
+def main() -> None:
+    paths = sys.argv[1:] if len(sys.argv) > 1 else DEFAULT_PATHS
+    for path in paths:
+        report_one(path)
 
 
 if __name__ == "__main__":
