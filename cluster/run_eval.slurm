@@ -72,6 +72,18 @@ COMMON_ARGS=(--splits easy medium hard --limit "$LIMIT" --seed 42 --model "$MODE
 echo "Checking GPU visibility..."
 nvidia-smi -L || echo "nvidia-smi not found / no GPU visible -- Ollama will fall back to CPU"
 
+echo "HOME=$HOME  OLLAMA_MODELS=$OLLAMA_MODELS"
+echo "Models visible to this ollama server:"
+ollama list || true
+
+if ! ollama list | grep -q "$MODEL"; then
+  echo "$MODEL not visible to this node's ollama server -- attempting to pull it here"
+  echo "(this needs outbound internet from the compute node; if it fails, the"
+  echo " model directory likely isn't shared between login and compute nodes --"
+  echo " copy \$HOME/ollama_models from the login node to shared/scratch storage instead)"
+  ollama pull "$MODEL"
+fi
+
 case "$PHASE" in
   baseline) python -m src.run_full_eval_baseline "${COMMON_ARGS[@]}" ;;
   phase1)   python -m src.run_full_eval "${COMMON_ARGS[@]}" ;;
