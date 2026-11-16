@@ -2,18 +2,24 @@
 #SBATCH --job-name=llmdb-eval
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
-#SBATCH --time=24:00:00
+#SBATCH --partition=gpu-1day
+#SBATCH --gres=gpu:1
+#SBATCH --time=23:30:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-# Uncomment and set these to your cluster's GPU partition name if one exists
-# (check with: sinfo -o "%P %G"). A 7B model is much faster with a GPU.
-# #SBATCH --partition=gpu
-# #SBATCH --gres=gpu:1
+#
+# Partition cheat sheet for this cluster (from `sinfo -o "%P %l %D"`):
+#   gpu-short  8:00:00   gpu-long  12:00:00   gpu-1day  1-00:00:00   gpu-3day  3-00:00:00
+# Override at submit time, e.g. for a quick smoke test:
+#   sbatch --partition=gpu-short --time=1:00:00 --job-name=smoke cluster/run_eval.slurm baseline 50
 #
 # Usage (run from the repo root, logs/ must exist -- setup_env.sh creates it):
 #   sbatch --job-name=baseline-7b cluster/run_eval.slurm baseline
 #   sbatch --job-name=phase1-7b   cluster/run_eval.slurm phase1
 #   sbatch --job-name=phase2-7b   cluster/run_eval.slurm phase2
+# Optional 2nd arg overrides the row limit (default 10000) -- use a small
+# number for a smoke test before committing a full GPU time slot:
+#   sbatch --partition=gpu-short --job-name=smoke cluster/run_eval.slurm baseline 50
 #
 # Each phase writes to its own default checkpoint/report file, so all three
 # can be submitted and run concurrently with no collision.
@@ -24,7 +30,8 @@
 
 set -euo pipefail
 
-PHASE="${1:?Usage: sbatch run_eval.slurm <baseline|phase1|phase2>}"
+PHASE="${1:?Usage: sbatch run_eval.slurm <baseline|phase1|phase2> [limit]}"
+LIMIT="${2:-10000}"
 
 module load python/3.13.5 2>/dev/null || module load miniconda/default
 source .venv/bin/activate
@@ -60,7 +67,10 @@ if [ "$ready" -ne 1 ]; then
 fi
 
 MODEL="qwen2.5:7b-instruct"
-COMMON_ARGS=(--splits easy medium hard --limit 10000 --seed 42 --model "$MODEL" --workers 4)
+COMMON_ARGS=(--splits easy medium hard --limit "$LIMIT" --seed 42 --model "$MODEL" --workers 4)
+
+echo "Checking GPU visibility..."
+nvidia-smi -L || echo "nvidia-smi not found / no GPU visible -- Ollama will fall back to CPU"
 
 case "$PHASE" in
   baseline) python -m src.run_full_eval_baseline "${COMMON_ARGS[@]}" ;;
