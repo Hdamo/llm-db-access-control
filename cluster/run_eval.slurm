@@ -28,7 +28,7 @@ PHASE="${1:?Usage: sbatch run_eval.slurm <baseline|phase1|phase2>}"
 
 module load python/3.13.5 2>/dev/null || module load miniconda/default
 source .venv/bin/activate
-export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/ollama-dist/bin:$PATH"
 export OLLAMA_MODELS="${OLLAMA_MODELS:-$HOME/ollama_models}"
 
 # Match this to --workers below. Higher = more concurrent Ollama requests

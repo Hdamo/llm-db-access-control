@@ -11,13 +11,32 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "== Ollama (portable binary, no sudo/root needed) =="
-if ! command -v ollama >/dev/null 2>&1; then
-  mkdir -p "$HOME/bin"
-  curl -L https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tgz -o /tmp/ollama.tgz
-  tar -xzf /tmp/ollama.tgz -C "$HOME/bin" --strip-components=1 ./bin/ollama
+echo "== Ollama (portable, no sudo/root needed) =="
+# Ollama's Linux release asset is a .tar.zst (zstd, NOT gzip) archive
+# containing a bin/ + lib/ directory pair -- keep them as siblings, the
+# ollama binary finds its backend libs relative to its own path.
+if [ ! -x "$HOME/ollama-dist/bin/ollama" ]; then
+  mkdir -p "$HOME/ollama-dist"
+  curl -fL https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst \
+    -o /tmp/ollama.tar.zst
+  if tar --zstd -tf /tmp/ollama.tar.zst >/dev/null 2>&1; then
+    tar --zstd -xf /tmp/ollama.tar.zst -C "$HOME/ollama-dist"
+  else
+    echo "system tar lacks built-in zstd support -- falling back to Python"
+    pip install --quiet zstandard
+    python3 - <<'PYEOF'
+import os, tarfile, zstandard
+home = os.environ["HOME"]
+with open("/tmp/ollama.tar.zst", "rb") as f:
+    dctx = zstandard.ZstdDecompressor()
+    with dctx.stream_reader(f) as reader:
+        with tarfile.open(fileobj=reader, mode="r|") as tar:
+            tar.extractall(path=os.path.join(home, "ollama-dist"))
+PYEOF
+  fi
 fi
-export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/ollama-dist/bin:$PATH"
+ollama --version
 
 echo "== Pulling model weights (needs internet -- do this on the login node) =="
 export OLLAMA_MODELS="${OLLAMA_MODELS:-$HOME/ollama_models}"
