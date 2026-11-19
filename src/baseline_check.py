@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, Union
 
 import ollama
@@ -35,6 +36,8 @@ from pydantic import BaseModel, ValidationError, field_validator
 
 from src.access_check import Verdict
 from src.attribute_extract import parse_permissions
+
+ROOT = Path(__file__).resolve().parent.parent
 
 DEFAULT_MODEL = os.environ.get(
     "LLMDB_BASELINE_MODEL", os.environ.get("LLMDB_OLLAMA_MODEL", "qwen2.5:7b-instruct")
@@ -79,7 +82,12 @@ class BaselineResult:
     reasoning: str
 
 
-SYSTEM_PROMPT_TEMPLATE = """You are an access-control decision engine. A user with the \
+# Split into an evolvable "instructions" block (the part
+# src/gepa_optimize_baseline.py is allowed to rewrite -- see
+# LLMDB_BASELINE_SYSTEM_PROMPT_FILE below) and a fixed JSON-schema footer that's
+# always appended verbatim, so an evolved prompt can never accidentally drop the
+# field names BaselineVerdict.model_validate() depends on.
+SYSTEM_PROMPT_INSTRUCTIONS = """You are an access-control decision engine. A user with the \
 permissions listed below has submitted a query. Decide, in ONE holistic judgment, whether \
 the query should be FULL access (fully allowed), PARTIAL access (part of what's asked is \
 allowed, part isn't or comes with an unmet restriction), or REJECTED (fully denied).
@@ -88,12 +96,38 @@ THIS USER'S PERMISSIONS:
 {field_list}
 
 Weigh everything shown above together and pick the single outcome that best fits. Do NOT \
-break the query into pieces or list field-by-field reasoning -- one overall decision only.
+break the query into pieces or list field-by-field reasoning -- one overall decision only."""
+
+SYSTEM_PROMPT_JSON_FOOTER = """
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this \
 schema:
-{{"verdict": "full" | "partial" | "rejected", "reasoning": "<one short sentence>"}}
+{"verdict": "full" | "partial" | "rejected", "reasoning": "<one short sentence>"}
 """
+
+SYSTEM_PROMPT_TEMPLATE = SYSTEM_PROMPT_INSTRUCTIONS + SYSTEM_PROMPT_JSON_FOOTER
+
+# Optional override: point this at a file (e.g. the prompt
+# src/gepa_optimize_baseline.py writes to reports/gepa_best_baseline_prompt.txt) to
+# swap in a different instructions block without editing this file. Unset ->
+# SYSTEM_PROMPT_INSTRUCTIONS above, byte-identical to before this option existed.
+_SYSTEM_PROMPT_OVERRIDE_ENV = "LLMDB_BASELINE_SYSTEM_PROMPT_FILE"
+
+
+def _load_instructions_template() -> str:
+    path_str = os.environ.get(_SYSTEM_PROMPT_OVERRIDE_ENV, "").strip()
+    if not path_str:
+        return SYSTEM_PROMPT_INSTRUCTIONS
+    path = Path(path_str)
+    if not path.is_absolute():
+        path = ROOT / path
+    text = path.read_text(encoding="utf-8").strip()
+    if "{field_list}" not in text:
+        text += "\n\nTHIS USER'S PERMISSIONS:\n{field_list}"
+    return text
+
+
+INSTRUCTIONS_TEMPLATE = _load_instructions_template()
 
 
 def _build_system_prompt(permissions: dict) -> str:
@@ -101,7 +135,8 @@ def _build_system_prompt(permissions: dict) -> str:
         field_list = "(none -- this user has no listed permissions; deny everything.)"
     else:
         field_list = "\n".join(f"- {k}: {json.dumps(v)}" for k, v in permissions.items())
-    return SYSTEM_PROMPT_TEMPLATE.format(field_list=field_list)
+    body = INSTRUCTIONS_TEMPLATE.replace("{field_list}", field_list)
+    return body + SYSTEM_PROMPT_JSON_FOOTER
 
 
 def _call_ollama(model: str, system_prompt: str, user_query: str) -> str:

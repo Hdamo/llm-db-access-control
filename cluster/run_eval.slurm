@@ -27,6 +27,13 @@
 # Crash/timeout-resumable: if this job hits the time limit before finishing,
 # just resubmit the exact same sbatch command -- the JSONL checkpoint picks
 # up where it left off.
+#
+# To run a variant WITHOUT clobbering the default checkpoint/report (e.g. a
+# GEPA-evolved-prompt comparison run), set CHECKPOINT/REPORT before sbatch:
+#   CHECKPOINT=reports/full_eval_baseline_gepa_checkpoint.jsonl \
+#   REPORT=reports/full_eval_baseline_gepa_report.xlsx \
+#   LLMDB_BASELINE_SYSTEM_PROMPT_FILE=reports/gepa_best_baseline_prompt.txt \
+#     sbatch --job-name=baseline-gepa cluster/run_eval.slurm baseline 2000
 
 set -euo pipefail
 
