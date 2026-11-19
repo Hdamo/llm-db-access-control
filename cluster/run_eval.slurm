@@ -75,6 +75,12 @@ fi
 
 MODEL="qwen2.5:7b-instruct"
 COMMON_ARGS=(--splits easy medium hard --limit "$LIMIT" --seed 42 --model "$MODEL" --workers 4)
+if [ -n "${CHECKPOINT:-}" ]; then
+  COMMON_ARGS+=(--checkpoint "$CHECKPOINT")
+fi
+if [ -n "${REPORT:-}" ]; then
+  COMMON_ARGS+=(--report "$REPORT")
+fi
 
 echo "Checking GPU visibility..."
 nvidia-smi -L || echo "nvidia-smi not found / no GPU visible -- Ollama will fall back to CPU"
